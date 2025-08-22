@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   web:
     build:
@@ -6,13 +8,14 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /usr/app/frontend/node_modules
       - .:/usr/app/frontend
+      - /usr/app/frontend/node_modules
+
   tests:
     build:
       context: .
       dockerfile: Dockerfile.dev
     volumes:
-      - /usr/app/frontend/node_modules
       - .:/usr/app/frontend
+      - /usr/app/frontend/node_modules
     command: ["npm", "run", "test"]
