@@ -6,8 +6,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /app/node_modules
-      - .:/app
+      - /usr/app/frontend/node_modules
+      - .:/usr/app/frontend
 
   tests:
     stdin_open: true
@@ -15,6 +15,6 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     volumes:
-      - /app/node_modules
-      - .:/app
+      - /usr/app/frontend/node_modules
+      - .:/usr/app/frontend
     command: ["npm", "run", "test"]
