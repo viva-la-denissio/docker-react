@@ -1,4 +1,4 @@
-name: Deploy React Frontend to Elastic Beanstalk
+name: Deploy Dockerized React App
 
 on:
   push:
@@ -13,18 +13,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/react-app .
 
-      - name: Build React app
-        run: npm run build
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Package build folder
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/react-app
+
+      - name: Create Dockerrun.aws.json
         run: |
-          mkdir bundle
-          cp -r build/. bundle/
-          cd bundle
-          zip -r ../deploy.zip .
+          echo '{
+            "AWSEBDockerrunVersion": "1",
+            "Image": {
+              "Name": "'${{ secrets.DOCKER_USERNAME }}/react-app'",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": "80"
+              }
+            ]
+          }' > Dockerrun.aws.json
+
+      - name: Zip deployment package
+        run: zip deploy.zip Dockerrun.aws.json
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v18
@@ -37,4 +51,3 @@ jobs:
           region: us-east-1
           version_label: ${{ github.sha }}
           deployment_package: deploy.zip
-          use_existing_version_if_available: true
