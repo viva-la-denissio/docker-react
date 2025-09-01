@@ -1,24 +1,32 @@
-name: Deploy Frontend
+name: Deploy React Frontend to Elastic Beanstalk
+
 on:
   push:
     branches:
       - master
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout source code to build
+      - name: Checkout code
         uses: actions/checkout@v3
-      
-      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - run: docker build -t cygnetops/react-test -f Dockerfile.dev .
-      - run: docker run -e CI=true cygnetops/react-test npm test
 
-      - name: Generate deployment package
-        run: zip -r deploy.zip . -x '*.git*'
+      - name: Install dependencies
+        run: npm install
 
-      - name: Deploy to EB
+      - name: Build React app
+        run: npm run build
+
+      - name: Package build folder
+        run: |
+          mkdir bundle
+          cp -r build/. bundle/
+          cd bundle
+          zip -r ../deploy.zip .
+
+      - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v18
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -27,6 +35,6 @@ jobs:
           environment_name: Frontend-env
           existing_bucket_name: elasticbeanstalk-us-east-1-799722627065
           region: us-east-1
-          use_existing_version_if_available: true
           version_label: ${{ github.sha }}
           deployment_package: deploy.zip
+          use_existing_version_if_available: true
